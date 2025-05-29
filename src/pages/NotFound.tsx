@@ -1,5 +1,10 @@
-import { useLocation } from "react-router-dom";
+
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from '@/components/ui/button';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { Home, ArrowLeft } from 'lucide-react';
 
 const NotFound = () => {
   const location = useLocation();
@@ -12,14 +17,47 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+    <div className="min-h-screen bg-violin-50">
+      <Header />
+      
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="text-8xl mb-8">🎻</div>
+          <h1 className="text-6xl font-bold text-violin-900 mb-4">404</h1>
+          <h2 className="text-2xl font-semibold text-violin-800 mb-4">
+            Página não encontrada
+          </h2>
+          <p className="text-violin-600 mb-8">
+            Parece que a página que você está procurando não existe. 
+            Que tal voltar para o início e explorar nossos cursos de violino?
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild className="bg-violin-gradient hover:opacity-90">
+              <Link to="/">
+                <Home className="w-4 h-4 mr-2" />
+                Voltar ao Início
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/classes">
+                Ver Nossos Cursos
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="mt-8">
+            <Button asChild variant="ghost" className="text-violin-600">
+              <button onClick={() => window.history.back()}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar à página anterior
+              </button>
+            </Button>
+          </div>
+        </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
