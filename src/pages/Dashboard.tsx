@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,7 +85,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-violin-200 hover:shadow-lg transition-shadow cursor-pointer">
             <Link to="/evaluation">
               <CardHeader>
@@ -130,6 +129,22 @@ const Dashboard = () => {
               <CardContent>
                 <CardDescription className="text-violin-600">
                   Marque uma aula ao vivo com professor
+                </CardDescription>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className="border-violin-200 hover:shadow-lg transition-shadow cursor-pointer">
+            <Link to="/my-lessons">
+              <CardHeader>
+                <CardTitle className="text-violin-900 flex items-center">
+                  <span className="text-2xl mr-3">📚</span>
+                  Minhas Aulas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-violin-600">
+                  Visualize suas aulas agendadas
                 </CardDescription>
               </CardContent>
             </Link>

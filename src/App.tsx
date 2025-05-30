@@ -15,6 +15,7 @@ import VideoLesson from "./pages/VideoLesson";
 import Evaluation from "./pages/Evaluation";
 import Forum from "./pages/Forum";
 import Schedule from "./pages/Schedule";
+import MyLessons from "./pages/MyLessons";
 import Support from "./pages/Support";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -59,6 +60,11 @@ const App = () => (
             <Route path="/schedule" element={
               <ProtectedRoute>
                 <Schedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-lessons" element={
+              <ProtectedRoute>
+                <MyLessons />
               </ProtectedRoute>
             } />
             <Route path="/support" element={<Support />} />
