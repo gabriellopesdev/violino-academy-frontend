@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,6 +74,9 @@ const Dashboard = () => {
     }
   };
 
+  // Get user name from user metadata or email
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
+
   return (
     <div className="min-h-screen bg-violin-50">
       <Header />
@@ -83,7 +85,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-violin-900 mb-2">
-            Bem-vindo de volta, {user?.name}!
+            Bem-vindo de volta, {userName}!
           </h1>
           <p className="text-violin-600">
             Continue sua jornada musical. Escolha uma aula para continuar aprendendo.

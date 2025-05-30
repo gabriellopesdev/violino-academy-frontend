@@ -10,14 +10,17 @@ const Header = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  // Get user name from user metadata
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-violin-200 sticky top-0 z-50">
@@ -67,7 +70,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <span className="text-violin-700">Olá, {user?.name}</span>
+                <span className="text-violin-700">Olá, {userName}</span>
                 <Button onClick={handleLogout} variant="outline" size="sm">
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
@@ -158,7 +161,7 @@ const Header = () => {
               <div className="flex flex-col space-y-2 pt-4 border-t border-violin-200">
                 {isAuthenticated ? (
                   <>
-                    <span className="text-violin-700">Olá, {user?.name}</span>
+                    <span className="text-violin-700">Olá, {userName}</span>
                     <Button onClick={handleLogout} variant="outline" size="sm" className="w-fit">
                       <LogOut className="w-4 h-4 mr-2" />
                       Sair
