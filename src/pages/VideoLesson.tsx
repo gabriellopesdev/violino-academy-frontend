@@ -50,6 +50,23 @@ const VideoLesson = () => {
         return;
       }
 
+      // Helper function to safely transform materials
+      const transformMaterials = (materials: any): { name: string; url: string }[] => {
+        if (!materials || !Array.isArray(materials)) {
+          return [];
+        }
+        
+        return materials.filter((material: any) => 
+          material && 
+          typeof material === 'object' && 
+          typeof material.name === 'string' && 
+          typeof material.url === 'string'
+        ).map((material: any) => ({
+          name: material.name,
+          url: material.url
+        }));
+      };
+
       // Transform the data to match our interface
       const transformedLesson: VideoLessonData = {
         id: data.id,
@@ -59,7 +76,7 @@ const VideoLesson = () => {
         level: data.level,
         video_url: data.video_url || '',
         topics: data.topics || [],
-        materials: Array.isArray(data.materials) ? data.materials : []
+        materials: transformMaterials(data.materials)
       };
 
       setLesson(transformedLesson);
