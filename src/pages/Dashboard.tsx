@@ -1,3 +1,5 @@
+
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,61 +7,52 @@ import { Badge } from '@/components/ui/badge';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data for video lessons
-const mockLessons = [
-  {
-    id: '1',
-    title: 'Introdução ao Violino - Postura e Arco',
-    description: 'Aprenda a postura correta e como segurar o arco adequadamente.',
-    duration: '15 min',
-    level: 'Iniciante',
-    thumbnail: '🎻'
-  },
-  {
-    id: '2',
-    title: 'Primeiras Notas - Cordas Soltas',
-    description: 'Domine o som das cordas soltas antes de aprender as posições.',
-    duration: '20 min',
-    level: 'Iniciante',
-    thumbnail: '🎵'
-  },
-  {
-    id: '3',
-    title: 'Técnica de Arco - Détaché',
-    description: 'Desenvolva a técnica básica de arco com exercícios práticos.',
-    duration: '25 min',
-    level: 'Intermediário',
-    thumbnail: '🎼'
-  },
-  {
-    id: '4',
-    title: 'Primeira Posição - Dedilhado',
-    description: 'Aprenda o dedilhado da primeira posição com exercícios graduais.',
-    duration: '30 min',
-    level: 'Iniciante',
-    thumbnail: '✋'
-  },
-  {
-    id: '5',
-    title: 'Escalas Maiores - Dó Maior',
-    description: 'Domine a escala de Dó Maior em primeira posição.',
-    duration: '18 min',
-    level: 'Intermediário',
-    thumbnail: '🎯'
-  },
-  {
-    id: '6',
-    title: 'Vibrato - Técnica Avançada',
-    description: 'Introdução à técnica de vibrato para expressividade musical.',
-    duration: '35 min',
-    level: 'Avançado',
-    thumbnail: '✨'
-  }
-];
+interface VideoLesson {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  level: string;
+  thumbnail: string;
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [lessons, setLessons] = useState<VideoLesson[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLessons();
+  }, []);
+
+  const fetchLessons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('video_lessons')
+        .select('id, title, description, duration, level, thumbnail')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching lessons:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as aulas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLessons(data || []);
+    } catch (error) {
+      console.error('Error fetching lessons:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -146,36 +139,53 @@ const Dashboard = () => {
         {/* Video Lessons */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-violin-900 mb-6">Videoaulas Disponíveis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockLessons.map((lesson) => (
-              <Card key={lesson.id} className="border-violin-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      <span className="text-3xl mr-3">{lesson.thumbnail}</span>
-                      <div>
-                        <Badge className={getLevelColor(lesson.level)}>
-                          {lesson.level}
-                        </Badge>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="border-violin-200 animate-pulse">
+                  <CardHeader>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-16 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-8 bg-gray-200 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lessons.map((lesson) => (
+                <Card key={lesson.id} className="border-violin-200 hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center">
+                        <span className="text-3xl mr-3">{lesson.thumbnail}</span>
+                        <div>
+                          <Badge className={getLevelColor(lesson.level)}>
+                            {lesson.level}
+                          </Badge>
+                        </div>
                       </div>
+                      <span className="text-sm text-violin-500">{lesson.duration}</span>
                     </div>
-                    <span className="text-sm text-violin-500">{lesson.duration}</span>
-                  </div>
-                  <CardTitle className="text-violin-900 mt-2">{lesson.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-violin-600 mb-4">
-                    {lesson.description}
-                  </CardDescription>
-                  <Button asChild className="w-full bg-violin-gradient hover:opacity-90">
-                    <Link to={`/video-lesson/${lesson.id}`}>
-                      Assistir Aula
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardTitle className="text-violin-900 mt-2">{lesson.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-violin-600 mb-4">
+                      {lesson.description}
+                    </CardDescription>
+                    <Button asChild className="w-full bg-violin-gradient hover:opacity-90">
+                      <Link to={`/video-lesson/${lesson.id}`}>
+                        Assistir Aula
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Progress Overview */}
@@ -187,15 +197,15 @@ const Dashboard = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-violin-900">6</div>
-                  <div className="text-violin-600">Aulas Assistidas</div>
+                  <div className="text-2xl font-bold text-violin-900">{lessons.length}</div>
+                  <div className="text-violin-600">Aulas Disponíveis</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-violin-900">12h</div>
+                  <div className="text-2xl font-bold text-violin-900">0h</div>
                   <div className="text-violin-600">Tempo de Estudo</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-violin-900">85%</div>
+                  <div className="text-2xl font-bold text-violin-900">0%</div>
                   <div className="text-violin-600">Taxa de Conclusão</div>
                 </div>
               </div>

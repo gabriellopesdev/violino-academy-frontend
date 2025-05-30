@@ -1,53 +1,87 @@
 
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Home, Download, ChevronLeft } from 'lucide-react';
+import { Download, ChevronLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock lesson data
-const mockLessons = {
-  '1': {
-    title: 'Introdução ao Violino - Postura e Arco',
-    description: 'Aprenda a postura correta e como segurar o arco adequadamente. Esta aula fundamental estabelece as bases para tocar violino com técnica adequada.',
-    duration: '15 min',
-    level: 'Iniciante',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    materials: [
-      { name: 'Apostila - Postura Correta.pdf', url: '#' },
-      { name: 'Exercícios de Aquecimento.pdf', url: '#' }
-    ],
-    topics: [
-      'Como segurar o violino corretamente',
-      'Posição do arco na mão direita',
-      'Postura corporal adequada',
-      'Exercícios de relaxamento'
-    ]
-  },
-  '2': {
-    title: 'Primeiras Notas - Cordas Soltas',
-    description: 'Domine o som das cordas soltas antes de aprender as posições.',
-    duration: '20 min',
-    level: 'Iniciante',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    materials: [
-      { name: 'Cordas Soltas - Exercícios.pdf', url: '#' },
-      { name: 'Áudio de Referência.mp3', url: '#' }
-    ],
-    topics: [
-      'Afinação das cordas',
-      'Som das cordas soltas',
-      'Ritmo e tempo',
-      'Exercícios básicos'
-    ]
-  }
-};
+interface VideoLessonData {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  level: string;
+  video_url: string;
+  topics: string[];
+  materials: { name: string; url: string }[];
+}
 
 const VideoLesson = () => {
   const { id } = useParams();
-  const lesson = id ? mockLessons[id as keyof typeof mockLessons] : null;
+  const { toast } = useToast();
+  const [lesson, setLesson] = useState<VideoLessonData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      fetchLesson(id);
+    }
+  }, [id]);
+
+  const fetchLesson = async (lessonId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('video_lessons')
+        .select('*')
+        .eq('id', lessonId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching lesson:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a aula.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLesson(data);
+    } catch (error) {
+      console.error('Error fetching lesson:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-violin-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="h-12 bg-gray-200 rounded w-3/4 mb-6"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="aspect-video bg-gray-200 rounded"></div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-32 bg-gray-200 rounded"></div>
+                <div className="h-32 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!lesson) {
     return (
@@ -81,7 +115,10 @@ const VideoLesson = () => {
 
   const handleDownload = (materialName: string) => {
     // Here you would implement the actual download logic
-    alert(`Baixando: ${materialName}`);
+    toast({
+      title: "Download",
+      description: `Baixando: ${materialName}`,
+    });
   };
 
   return (
@@ -115,23 +152,33 @@ const VideoLesson = () => {
             <Card className="border-violin-200">
               <CardContent className="p-0">
                 <div className="aspect-video bg-gray-900 rounded-t-lg">
-                  <iframe
-                    className="w-full h-full rounded-t-lg"
-                    src={lesson.videoUrl}
-                    title={lesson.title}
-                    allowFullScreen
-                  ></iframe>
+                  {lesson.video_url ? (
+                    <iframe
+                      className="w-full h-full rounded-t-lg"
+                      src={lesson.video_url}
+                      title={lesson.title}
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <p>Vídeo não disponível</p>
+                    </div>
+                  )}
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-violin-900 mb-4">Conteúdo da Aula</h3>
-                  <ul className="space-y-2">
-                    {lesson.topics.map((topic, index) => (
-                      <li key={index} className="flex items-center text-violin-700">
-                        <span className="w-2 h-2 bg-violin-400 rounded-full mr-3"></span>
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
+                  {lesson.topics && lesson.topics.length > 0 ? (
+                    <ul className="space-y-2">
+                      {lesson.topics.map((topic, index) => (
+                        <li key={index} className="flex items-center text-violin-700">
+                          <span className="w-2 h-2 bg-violin-400 rounded-full mr-3"></span>
+                          {topic}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-violin-600">Conteúdo em desenvolvimento.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -151,21 +198,27 @@ const VideoLesson = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {lesson.materials.map((material, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-violin-50 rounded-lg">
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-3">📄</span>
-                      <span className="text-violin-800 text-sm">{material.name}</span>
+                {lesson.materials && lesson.materials.length > 0 ? (
+                  lesson.materials.map((material, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-violin-50 rounded-lg">
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">📄</span>
+                        <span className="text-violin-800 text-sm">{material.name}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleDownload(material.name)}
+                        className="bg-violin-gradient hover:opacity-90"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleDownload(material.name)}
-                      className="bg-violin-gradient hover:opacity-90"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-violin-500 text-center py-4">
+                    Nenhum material disponível para esta aula.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -203,14 +256,14 @@ const VideoLesson = () => {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-violin-600">Conclusão da Aula</span>
-                      <span className="text-violin-900 font-medium">100%</span>
+                      <span className="text-violin-900 font-medium">0%</span>
                     </div>
                     <div className="w-full bg-violin-200 rounded-full h-2">
-                      <div className="bg-violin-gradient h-2 rounded-full w-full"></div>
+                      <div className="bg-violin-gradient h-2 rounded-full w-0"></div>
                     </div>
                   </div>
                   <p className="text-sm text-violin-600">
-                    Parabéns! Você completou esta aula.
+                    Assista a aula para acompanhar seu progresso.
                   </p>
                 </div>
               </CardContent>

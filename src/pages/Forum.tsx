@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,69 +10,112 @@ import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Send, MessageCircle, User, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock forum posts
-const mockPosts = [
-  {
-    id: 1,
-    title: 'Dificuldade com a posição do arco',
-    content: 'Olá pessoal! Estou tendo dificuldade para manter o arco reto durante as arcadas. Alguém tem dicas para melhorar essa técnica?',
-    author: 'Maria Silva',
-    date: '2024-01-15',
-    replies: 3,
-    category: 'Técnica'
-  },
-  {
-    id: 2,
-    title: 'Recomendações de exercícios para iniciantes',
-    content: 'Acabei de começar e gostaria de saber quais exercícios vocês recomendam para desenvolver a coordenação entre mão esquerda e direita.',
-    author: 'João Santos',
-    date: '2024-01-14',
-    replies: 7,
-    category: 'Iniciante'
-  },
-  {
-    id: 3,
-    title: 'Como melhorar a afinação das cordas soltas?',
-    content: 'Tenho dificuldade para afinar meu violino. Uso um aplicativo afinador, mas ainda sinto que não está perfeito. Dicas?',
-    author: 'Ana Costa',
-    date: '2024-01-13',
-    replies: 5,
-    category: 'Equipamento'
-  }
-];
+interface ForumPost {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    name: string;
+  };
+}
 
-// Mock replies
-const mockReplies = {
-  1: [
-    {
-      id: 1,
-      content: 'Uma dica que me ajudou muito foi praticar em frente ao espelho. Assim você consegue ver se o arco está reto e corrigir na hora.',
-      author: 'Prof. Carlos',
-      date: '2024-01-15',
-      isTeacher: true
-    },
-    {
-      id: 2,
-      content: 'Concordo com o Professor Carlos! Também recomendo exercícios bem lentos no início.',
-      author: 'Pedro Lima',
-      date: '2024-01-15',
-      isTeacher: false
-    }
-  ]
-};
+interface ForumReply {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles?: {
+    name: string;
+  };
+}
 
 const Forum = () => {
-  const [selectedPost, setSelectedPost] = useState<number | null>(null);
+  const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [newReply, setNewReply] = useState('');
   const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [replies, setReplies] = useState<ForumReply[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [repliesLoading, setRepliesLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleSubmitPost = () => {
-    if (!newPostTitle.trim() || !newPostContent.trim()) {
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPost) {
+      fetchReplies(selectedPost);
+    }
+  }, [selectedPost]);
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('forum_posts')
+        .select(`
+          *,
+          profiles (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as postagens.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReplies = async (postId: string) => {
+    setRepliesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('forum_replies')
+        .select(`
+          *,
+          profiles (
+            name
+          )
+        `)
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching replies:', error);
+        return;
+      }
+
+      setReplies(data || []);
+    } catch (error) {
+      console.error('Error fetching replies:', error);
+    } finally {
+      setRepliesLoading(false);
+    }
+  };
+
+  const handleSubmitPost = async () => {
+    if (!newPostTitle.trim() || !newPostContent.trim() || !user) {
       toast({
         title: "Erro",
         description: "Por favor, preencha o título e o conteúdo da sua pergunta.",
@@ -81,19 +124,42 @@ const Forum = () => {
       return;
     }
 
-    // Here you would submit to your API
-    toast({
-      title: "Sucesso!",
-      description: "Sua pergunta foi enviada com sucesso.",
-    });
-    
-    setNewPostTitle('');
-    setNewPostContent('');
-    setShowNewPostForm(false);
+    try {
+      const { error } = await supabase
+        .from('forum_posts')
+        .insert({
+          user_id: user.id,
+          title: newPostTitle.trim(),
+          content: newPostContent.trim(),
+          category: 'Geral'
+        });
+
+      if (error) {
+        console.error('Error creating post:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar sua pergunta. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: "Sua pergunta foi enviada com sucesso.",
+      });
+      
+      setNewPostTitle('');
+      setNewPostContent('');
+      setShowNewPostForm(false);
+      fetchPosts(); // Refresh posts
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
   };
 
-  const handleSubmitReply = () => {
-    if (!newReply.trim()) {
+  const handleSubmitReply = async () => {
+    if (!newReply.trim() || !selectedPost || !user) {
       toast({
         title: "Erro",
         description: "Por favor, escreva uma resposta.",
@@ -102,13 +168,35 @@ const Forum = () => {
       return;
     }
 
-    // Here you would submit to your API
-    toast({
-      title: "Sucesso!",
-      description: "Sua resposta foi enviada com sucesso.",
-    });
-    
-    setNewReply('');
+    try {
+      const { error } = await supabase
+        .from('forum_replies')
+        .insert({
+          user_id: user.id,
+          post_id: selectedPost,
+          content: newReply.trim()
+        });
+
+      if (error) {
+        console.error('Error creating reply:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível enviar sua resposta. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: "Sua resposta foi enviada com sucesso.",
+      });
+      
+      setNewReply('');
+      fetchReplies(selectedPost); // Refresh replies
+    } catch (error) {
+      console.error('Error creating reply:', error);
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -126,6 +214,14 @@ const Forum = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getDisplayName = (post: ForumPost) => {
+    return post.profiles?.name || 'Usuário';
+  };
+
+  const getReplyDisplayName = (reply: ForumReply) => {
+    return reply.profiles?.name || 'Usuário';
   };
 
   return (
@@ -196,51 +292,76 @@ const Forum = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Posts List */}
             <div className="lg:col-span-2 space-y-4">
-              {mockPosts.map((post) => (
-                <Card 
-                  key={post.id} 
-                  className={`border-violin-200 cursor-pointer transition-shadow hover:shadow-lg ${
-                    selectedPost === post.id ? 'ring-2 ring-violin-400' : ''
-                  }`}
-                  onClick={() => setSelectedPost(selectedPost === post.id ? null : post.id)}
-                >
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className={getCategoryColor(post.category)}>
-                            {post.category}
-                          </Badge>
-                        </div>
-                        <CardTitle className="text-violin-900 hover:text-violin-700">
-                          {post.title}
-                        </CardTitle>
-                      </div>
-                    </div>
-                    <CardDescription className="text-violin-600">
-                      {post.content}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-sm text-violin-500">
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {post.author}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {formatDate(post.date)}
-                        </span>
-                      </div>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-4 h-4" />
-                        {post.replies} respostas
-                      </span>
-                    </div>
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="border-violin-200 animate-pulse">
+                      <CardHeader>
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-16 bg-gray-200 rounded"></div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : posts.length === 0 ? (
+                <Card className="border-violin-200">
+                  <CardContent className="text-center py-8">
+                    <MessageCircle className="w-12 h-12 text-violin-300 mx-auto mb-4" />
+                    <p className="text-violin-500">
+                      Ainda não há perguntas no fórum. Seja o primeiro a fazer uma pergunta!
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                posts.map((post) => (
+                  <Card 
+                    key={post.id} 
+                    className={`border-violin-200 cursor-pointer transition-shadow hover:shadow-lg ${
+                      selectedPost === post.id ? 'ring-2 ring-violin-400' : ''
+                    }`}
+                    onClick={() => setSelectedPost(selectedPost === post.id ? null : post.id)}
+                  >
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge className={getCategoryColor(post.category)}>
+                              {post.category}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-violin-900 hover:text-violin-700">
+                            {post.title}
+                          </CardTitle>
+                        </div>
+                      </div>
+                      <CardDescription className="text-violin-600">
+                        {post.content}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between text-sm text-violin-500">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {getDisplayName(post)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {formatDate(post.created_at)}
+                          </span>
+                        </div>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-4 h-4" />
+                          {replies.filter(r => r.user_id === post.user_id).length} respostas
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
 
             {/* Selected Post Details */}
@@ -252,23 +373,28 @@ const Forum = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Replies */}
-                    {mockReplies[selectedPost as keyof typeof mockReplies]?.map((reply) => (
-                      <div key={reply.id} className="border-l-4 border-violin-200 pl-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-violin-900">{reply.author}</span>
-                          {reply.isTeacher && (
-                            <Badge className="bg-gold-100 text-gold-800 text-xs">
-                              Professor
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-violin-700 text-sm mb-2">{reply.content}</p>
-                        <span className="text-xs text-violin-500">{formatDate(reply.date)}</span>
+                    {repliesLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="animate-pulse">
+                            <div className="h-16 bg-gray-200 rounded"></div>
+                          </div>
+                        ))}
                       </div>
-                    )) || (
+                    ) : replies.length === 0 ? (
                       <p className="text-violin-500 text-center py-4">
                         Ainda não há respostas para esta pergunta.
                       </p>
+                    ) : (
+                      replies.map((reply) => (
+                        <div key={reply.id} className="border-l-4 border-violin-200 pl-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium text-violin-900">{getReplyDisplayName(reply)}</span>
+                          </div>
+                          <p className="text-violin-700 text-sm mb-2">{reply.content}</p>
+                          <span className="text-xs text-violin-500">{formatDate(reply.created_at)}</span>
+                        </div>
+                      ))
                     )}
 
                     {/* Reply Form */}

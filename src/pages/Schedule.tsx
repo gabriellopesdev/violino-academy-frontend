@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -8,52 +8,61 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock, User, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '../contexts/AuthContext';
 
-// Mock teachers data
-const mockTeachers = [
-  {
-    id: 1,
-    name: 'Prof. Carlos Silva',
-    specialty: 'Técnica Clássica',
-    experience: '15 anos',
-    avatar: '👨‍🏫',
-    rating: 4.9,
-    price: 'R$ 80/hora'
-  },
-  {
-    id: 2,
-    name: 'Profa. Maria Santos',
-    specialty: 'Música Popular',
-    experience: '12 anos',
-    avatar: '👩‍🏫',
-    rating: 4.8,
-    price: 'R$ 75/hora'
-  },
-  {
-    id: 3,
-    name: 'Prof. João Oliveira',
-    specialty: 'Iniciantes',
-    experience: '8 anos',
-    avatar: '👨‍🎓',
-    rating: 4.7,
-    price: 'R$ 70/hora'
-  }
-];
-
-// Mock available times
-const mockAvailableTimes = [
-  '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
-];
+interface Teacher {
+  id: string;
+  name: string;
+  specialty: string;
+  experience: string;
+  avatar: string;
+  rating: number;
+  price_per_hour: number;
+  available_times: string[];
+}
 
 const Schedule = () => {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedTeacher, setSelectedTeacher] = useState<number | null>(null);
+  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleSchedule = () => {
-    if (!selectedDate || !selectedTeacher || !selectedTime) {
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching teachers:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os professores.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setTeachers(data || []);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSchedule = async () => {
+    if (!selectedDate || !selectedTeacher || !selectedTime || !user) {
       toast({
         title: "Erro",
         description: "Por favor, selecione uma data, professor e horário.",
@@ -64,8 +73,27 @@ const Schedule = () => {
 
     setIsConfirming(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { error } = await supabase
+        .from('class_schedules')
+        .insert({
+          user_id: user.id,
+          teacher_id: selectedTeacher,
+          scheduled_date: selectedDate.toISOString().split('T')[0],
+          scheduled_time: selectedTime,
+          status: 'agendado'
+        });
+
+      if (error) {
+        console.error('Error scheduling class:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível agendar a aula. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Sucesso!",
         description: "Sua aula foi agendada com sucesso. Você receberá um email de confirmação.",
@@ -74,11 +102,19 @@ const Schedule = () => {
       // Reset form
       setSelectedTeacher(null);
       setSelectedTime(null);
+    } catch (error) {
+      console.error('Error scheduling class:', error);
+      toast({
+        title: "Erro",
+        description: "Erro interno. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
       setIsConfirming(false);
-    }, 2000);
+    }
   };
 
-  const selectedTeacherData = mockTeachers.find(t => t.id === selectedTeacher);
+  const selectedTeacherData = teachers.find(t => t.id === selectedTeacher);
 
   const isDateAvailable = (date: Date) => {
     const today = new Date();
@@ -148,41 +184,53 @@ const Schedule = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mockTeachers.map((teacher) => (
-                      <Card 
-                        key={teacher.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          selectedTeacher === teacher.id 
-                            ? 'ring-2 ring-violin-400 bg-violin-50' 
-                            : 'border-violin-200'
-                        }`}
-                        onClick={() => setSelectedTeacher(teacher.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-2xl">{teacher.avatar}</div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-violin-900">{teacher.name}</h3>
-                              <p className="text-sm text-violin-600">{teacher.specialty}</p>
-                              <p className="text-xs text-violin-500">{teacher.experience}</p>
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-sm font-medium text-violin-900">{teacher.price}</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  ⭐ {teacher.rating}
-                                </Badge>
+                  {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="h-24 bg-gray-200 rounded"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {teachers.map((teacher) => (
+                        <Card 
+                          key={teacher.id}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedTeacher === teacher.id 
+                              ? 'ring-2 ring-violin-400 bg-violin-50' 
+                              : 'border-violin-200'
+                          }`}
+                          onClick={() => setSelectedTeacher(teacher.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="text-2xl">{teacher.avatar}</div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-violin-900">{teacher.name}</h3>
+                                <p className="text-sm text-violin-600">{teacher.specialty}</p>
+                                <p className="text-xs text-violin-500">{teacher.experience}</p>
+                                <div className="flex items-center justify-between mt-2">
+                                  <span className="text-sm font-medium text-violin-900">
+                                    R$ {teacher.price_per_hour?.toFixed(2)}/hora
+                                  </span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    ⭐ {teacher.rating?.toFixed(1)}
+                                  </Badge>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Time Selection */}
-              {selectedTeacher && (
+              {selectedTeacher && selectedTeacherData && (
                 <Card className="border-violin-200">
                   <CardHeader>
                     <CardTitle className="text-violin-900 flex items-center">
@@ -190,12 +238,12 @@ const Schedule = () => {
                       Horários Disponíveis
                     </CardTitle>
                     <CardDescription>
-                      Horários disponíveis para {selectedTeacherData?.name}
+                      Horários disponíveis para {selectedTeacherData.name}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                      {mockAvailableTimes.map((time) => (
+                      {selectedTeacherData.available_times?.map((time) => (
                         <Button
                           key={time}
                           variant={selectedTime === time ? "default" : "outline"}
@@ -208,14 +256,18 @@ const Schedule = () => {
                         >
                           {time}
                         </Button>
-                      ))}
+                      )) || (
+                        <p className="text-violin-500 col-span-full text-center">
+                          Nenhum horário disponível
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
               {/* Confirmation */}
-              {selectedDate && selectedTeacher && selectedTime && (
+              {selectedDate && selectedTeacher && selectedTime && selectedTeacherData && (
                 <Card className="border-violin-200 bg-violin-50">
                   <CardHeader>
                     <CardTitle className="text-violin-900 flex items-center">
@@ -226,7 +278,7 @@ const Schedule = () => {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <p className="text-violin-700">
-                        <strong>Professor:</strong> {selectedTeacherData?.name}
+                        <strong>Professor:</strong> {selectedTeacherData.name}
                       </p>
                       <p className="text-violin-700">
                         <strong>Data:</strong> {formatDate(selectedDate)}
@@ -235,7 +287,7 @@ const Schedule = () => {
                         <strong>Horário:</strong> {selectedTime}
                       </p>
                       <p className="text-violin-700">
-                        <strong>Valor:</strong> {selectedTeacherData?.price}
+                        <strong>Valor:</strong> R$ {selectedTeacherData.price_per_hour?.toFixed(2)}
                       </p>
                     </div>
                     
