@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -51,7 +50,19 @@ const VideoLesson = () => {
         return;
       }
 
-      setLesson(data);
+      // Transform the data to match our interface
+      const transformedLesson: VideoLessonData = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        duration: data.duration || '',
+        level: data.level,
+        video_url: data.video_url || '',
+        topics: data.topics || [],
+        materials: Array.isArray(data.materials) ? data.materials : []
+      };
+
+      setLesson(transformedLesson);
     } catch (error) {
       console.error('Error fetching lesson:', error);
     } finally {

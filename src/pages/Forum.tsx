@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,9 +18,7 @@ interface ForumPost {
   category: string;
   created_at: string;
   user_id: string;
-  profiles?: {
-    name: string;
-  };
+  author_name?: string;
 }
 
 interface ForumReply {
@@ -29,9 +26,7 @@ interface ForumReply {
   content: string;
   created_at: string;
   user_id: string;
-  profiles?: {
-    name: string;
-  };
+  author_name?: string;
 }
 
 const Forum = () => {
@@ -59,14 +54,9 @@ const Forum = () => {
 
   const fetchPosts = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: postsData, error } = await supabase
         .from('forum_posts')
-        .select(`
-          *,
-          profiles (
-            name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -79,7 +69,23 @@ const Forum = () => {
         return;
       }
 
-      setPosts(data || []);
+      // Fetch author names separately
+      const postsWithAuthors = await Promise.all(
+        (postsData || []).map(async (post) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', post.user_id)
+            .single();
+          
+          return {
+            ...post,
+            author_name: profile?.name || 'Usuário'
+          };
+        })
+      );
+
+      setPosts(postsWithAuthors);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -90,14 +96,9 @@ const Forum = () => {
   const fetchReplies = async (postId: string) => {
     setRepliesLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: repliesData, error } = await supabase
         .from('forum_replies')
-        .select(`
-          *,
-          profiles (
-            name
-          )
-        `)
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -106,7 +107,23 @@ const Forum = () => {
         return;
       }
 
-      setReplies(data || []);
+      // Fetch author names separately
+      const repliesWithAuthors = await Promise.all(
+        (repliesData || []).map(async (reply) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', reply.user_id)
+            .single();
+          
+          return {
+            ...reply,
+            author_name: profile?.name || 'Usuário'
+          };
+        })
+      );
+
+      setReplies(repliesWithAuthors);
     } catch (error) {
       console.error('Error fetching replies:', error);
     } finally {
@@ -217,11 +234,11 @@ const Forum = () => {
   };
 
   const getDisplayName = (post: ForumPost) => {
-    return post.profiles?.name || 'Usuário';
+    return post.author_name || 'Usuário';
   };
 
   const getReplyDisplayName = (reply: ForumReply) => {
-    return reply.profiles?.name || 'Usuário';
+    return reply.author_name || 'Usuário';
   };
 
   return (
