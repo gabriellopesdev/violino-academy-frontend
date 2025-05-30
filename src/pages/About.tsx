@@ -76,7 +76,7 @@ const About = () => {
                   Utilizamos tecnologia de ponta para criar uma experiência de aprendizado envolvente, 
                   com aulas interativas, acompanhamento personalizado e uma comunidade vibrante de músicos.
                 </p>
-                <Button asChild className="bg-violin-gradient hover:opacity-90">
+                <Button asChild className="  hover:opacity-90">
                   <Link to="/register">Comece Sua Jornada</Link>
                 </Button>
               </div>

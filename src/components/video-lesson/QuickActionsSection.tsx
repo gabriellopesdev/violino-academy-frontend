@@ -20,7 +20,7 @@ const QuickActionsSection = () => {
             Tirar Dúvidas
           </Link>
         </Button>
-        <Button asChild className="w-full bg-violin-gradient hover:opacity-90">
+        <Button asChild className="w-full   hover:opacity-90">
           <Link to="/schedule">
             Agendar Aula Particular
           </Link>

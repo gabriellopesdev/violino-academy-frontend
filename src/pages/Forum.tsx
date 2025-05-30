@@ -255,7 +255,7 @@ const Forum = () => {
             </div>
             <Button 
               onClick={() => setShowNewPostForm(!showNewPostForm)}
-              className="bg-violin-gradient hover:opacity-90 mt-4 sm:mt-0"
+              className="  hover:opacity-90 mt-4 sm:mt-0"
             >
               Nova Pergunta
             </Button>
@@ -290,7 +290,7 @@ const Forum = () => {
                 <div className="flex gap-3">
                   <Button 
                     onClick={handleSubmitPost}
-                    className="bg-violin-gradient hover:opacity-90"
+                    className="  hover:opacity-90"
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Enviar Pergunta
@@ -424,7 +424,7 @@ const Forum = () => {
                       />
                       <Button 
                         onClick={handleSubmitReply}
-                        className="w-full bg-violin-gradient hover:opacity-90"
+                        className="w-full   hover:opacity-90"
                         size="sm"
                       >
                         <Send className="w-4 h-4 mr-2" />

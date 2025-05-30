@@ -182,7 +182,7 @@ const MyLessons = () => {
                     <CardContent className="p-8 text-center">
                       <Calendar className="w-12 h-12 mx-auto text-violin-400 mb-4" />
                       <p className="text-violin-600 mb-4">Você não tem aulas agendadas.</p>
-                      <Button asChild className="bg-violin-gradient hover:opacity-90">
+                      <Button asChild className="  hover:opacity-90">
                         <a href="/schedule">Agendar Nova Aula</a>
                       </Button>
                     </CardContent>

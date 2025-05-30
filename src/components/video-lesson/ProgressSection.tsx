@@ -15,7 +15,7 @@ const ProgressSection = () => {
               <span className="text-violin-900 font-medium">0%</span>
             </div>
             <div className="w-full bg-violin-200 rounded-full h-2">
-              <div className="bg-violin-gradient h-2 rounded-full w-0"></div>
+              <div className="  h-2 rounded-full w-0"></div>
             </div>
           </div>
           <p className="text-sm text-violin-600">

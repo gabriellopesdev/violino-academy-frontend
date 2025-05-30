@@ -274,7 +274,7 @@ const Schedule = () => {
                             variant={selectedTime === time ? "default" : "outline"}
                             className={`${
                               selectedTime === time 
-                                ? 'bg-violin-gradient hover:opacity-90' 
+                                ? '  hover:opacity-90' 
                                 : 'border-violin-200 hover:bg-violin-50'
                             }`}
                             onClick={() => setSelectedTime(time)}
@@ -319,7 +319,7 @@ const Schedule = () => {
                       <Button 
                         onClick={handleSchedule}
                         disabled={isConfirming}
-                        className="w-full bg-violin-gradient hover:opacity-90"
+                        className="w-full   hover:opacity-90"
                       >
                         {isConfirming ? 'Agendando...' : 'Confirmar Agendamento'}
                       </Button>

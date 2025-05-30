@@ -191,7 +191,7 @@ const Dashboard = () => {
                     <CardDescription className="text-violin-600 mb-4">
                       {lesson.description}
                     </CardDescription>
-                    <Button asChild className="w-full bg-violin-gradient hover:opacity-90">
+                    <Button asChild className="w-full   hover:opacity-90">
                       <Link to={`/video-lesson/${lesson.id}`}>
                         Assistir Aula
                       </Link>

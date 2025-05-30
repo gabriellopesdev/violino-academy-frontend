@@ -155,7 +155,7 @@ const Evaluation = () => {
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button onClick={resetQuiz} className="bg-violin-gradient hover:opacity-90">
+                  <Button onClick={resetQuiz} className="  hover:opacity-90">
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Tentar Novamente
                   </Button>
@@ -255,7 +255,7 @@ const Evaluation = () => {
                 
                 <Button 
                   onClick={handleNextQuestion}
-                  className="bg-violin-gradient hover:opacity-90 order-1 sm:order-2"
+                  className="  hover:opacity-90 order-1 sm:order-2"
                 >
                   {currentQuestion < mockQuestions.length - 1 ? 'Próxima Questão' : 'Finalizar'}
                 </Button>

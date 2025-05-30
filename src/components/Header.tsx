@@ -28,7 +28,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-violin-gradient rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10   rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">🎻</span>
             </div>
             <span className="text-xl font-bold text-violin-800">
@@ -81,7 +81,7 @@ const Header = () => {
                 <Button asChild variant="outline">
                   <Link to="/login">Entrar</Link>
                 </Button>
-                <Button asChild className="bg-violin-gradient hover:opacity-90">
+                <Button asChild className="  hover:opacity-90">
                   <Link to="/register">Cadastrar</Link>
                 </Button>
               </div>
@@ -172,7 +172,7 @@ const Header = () => {
                     <Button asChild variant="outline" className="w-fit">
                       <Link to="/login">Entrar</Link>
                     </Button>
-                    <Button asChild className="bg-violin-gradient hover:opacity-90 w-fit">
+                    <Button asChild className="  hover:opacity-90 w-fit">
                       <Link to="/register">Cadastrar</Link>
                     </Button>
                   </>

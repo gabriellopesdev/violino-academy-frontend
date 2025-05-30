@@ -132,7 +132,7 @@ const Contact = () => {
 
                     <Button 
                       type="submit" 
-                      className="w-full bg-violin-gradient hover:opacity-90"
+                      className="w-full   hover:opacity-90"
                       disabled={loading}
                     >
                       {loading ? (

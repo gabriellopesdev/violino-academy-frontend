@@ -65,7 +65,7 @@ const Login = () => {
         <div className="w-full max-w-md">
           <Card className="border-violin-200 shadow-xl">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-violin-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16   rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl text-white">🎻</span>
               </div>
               <CardTitle className="text-2xl text-violin-900">Fazer Login</CardTitle>
@@ -101,7 +101,7 @@ const Login = () => {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-violin-gradient hover:opacity-90"
+                  className="w-full   hover:opacity-90"
                   disabled={loading}
                 >
                   {loading ? 'Entrando...' : 'Entrar'}

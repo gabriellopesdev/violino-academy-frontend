@@ -41,7 +41,7 @@ const MaterialsSection = ({ materials }: MaterialsSectionProps) => {
               <Button 
                 size="sm" 
                 onClick={() => handleDownload(material.name)}
-                className="bg-violin-gradient hover:opacity-90"
+                className="  hover:opacity-90"
               >
                 <Download className="w-4 h-4" />
               </Button>

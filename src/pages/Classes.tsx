@@ -168,7 +168,7 @@ const Classes = () => {
                     </ul>
                   </div>
 
-                  <Button asChild className="w-full bg-violin-gradient hover:opacity-90">
+                  <Button asChild className="w-full   hover:opacity-90">
                     <Link to="/register">Começar Curso</Link>
                   </Button>
                 </CardContent>
